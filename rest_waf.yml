@@ -1,0 +1,46 @@
+### WAF v2 ###
+
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: WAF v2 for REST
+
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "WAFWebACLMetricName"
+        Parameters:
+          - WAFWebACLMetricName
+
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------#
+Parameters:
+  WAFWebACLMetricName:
+    Type: String
+    MinLength: 1
+    MaxLength: 128
+    AllowedPattern: "[a-zA-Z0-9]*"
+
+Resources:
+  WAFWebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: "Maintenance-WebACL"
+      Scope: "REGIONAL"
+      VisibilityConfig:
+        CloudWatchMetricsEnabled: true
+        MetricName: !Ref WAFWebACLMetricName
+        SampledRequestsEnabled: true
+      CustomResponseBodies: 
+        CustomResponseBodyKeyForRest:
+          ContentType: APPLICATION_JSON
+          Content: '{"error": {"errorType": "MaintenanceMode", "message": "Unable to access during the maintenance."}}'
+      DefaultAction:
+        Block: 
+          CustomResponse:
+            ResponseCode: 503
+            CustomResponseBodyKey: CustomResponseBodyKeyForRest
+            ResponseHeaders:
+              - Name: custom-error-type
+                Value: "MaintenanceMode"
